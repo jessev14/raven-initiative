@@ -9,6 +9,15 @@
     "esmodules": [
         "scripts/raven-initiative.js"
     ],
+    "packs": [
+        {
+            "name": "raven-initiative",
+            "label": "Raven Initiative",
+            "path": "packs/raven-initiative.db",
+            "entity": "Item",
+            "package": "raven-initiative"
+        }
+    ],
     "url": "https://github.com/jessev14/raven-initiative",
     "manifest": "https://github.com/jessev14/raven-initiative/releases/latest/download/module.json",
     "download": "https://github.com/jessev14/raven-initiative/releases/download/1.0.0/RI.zip"
