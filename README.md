@@ -10,13 +10,13 @@ Commissioned by Rellek.
 
 Raven Initiative is a alternative initiative system for DnD 5e.
 
-# Rule Changes
+## Rule Changes
 
 * Instead of rolling `1d20 + DEX mod` for initiative, different dice are rolled based on the action chosen at the beginning of the round.
 * Lower initiative results go first in the round, with ties won by higher DEX score.
 * The chosen action for the round can be changed mid-round, but a new inititiave die must be rolled and added to the previous initiative total.
 
-# Module Features
+## Module Features
 
 In addition to implementing the above rule changes, this module adds features to streamline the Raven Initiative system in FoundryVTT:
 
