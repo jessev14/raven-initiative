@@ -21,9 +21,9 @@ const downgrade = {
     "Standard Action": 8,
     "Cantrip": 10,
     "Spellcasting": 12,
-    d12: 20,
+    d12: 14,
 };
-const dice_downgrade = [6, 8, 10, 12, 20];
+const dice_downgrade = [6, 8, 10, 12, 14];
 
 export function getGrade(actor) {
     const gradeEffect = actor.effects.find(e => e.data.changes[0]?.key === "raven-initiative-grade");
