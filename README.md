@@ -10,7 +10,7 @@ Commissioned by Rellek.
 
 Raven Initiative is a alternative initiative system for DnD 5e.
 
-Rules Doc: https://docs.google.com/document/d/1HzB2HhfarNag6lS1FqOhdPJu18F3Ofz0sUGEKnYHbOE/edit#heading=h.t80xhxj4b5rs
+[Rules Doc](https://docs.google.com/document/d/1HzB2HhfarNag6lS1FqOhdPJu18F3Ofz0sUGEKnYHbOE/edit#heading=h.t80xhxj4b5rs)
 
 <img src="/img/ri-demo.png" width="600"/>
 
@@ -19,6 +19,7 @@ Rules Doc: https://docs.google.com/document/d/1HzB2HhfarNag6lS1FqOhdPJu18F3Ofz0s
 * Instead of rolling `1d20 + DEX mod` for initiative, different dice are rolled based on the action chosen at the beginning of the round.
 * Lower initiative results go first in the round, with ties won by higher DEX score.
 * The chosen action for the round can be changed mid-round, but a new inititiave die must be rolled and added to the previous initiative total.
+* Initiative is re-rolled every round.
 
 ## Module Features
 
