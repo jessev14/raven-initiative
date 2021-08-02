@@ -332,7 +332,7 @@ async function ravenRollNPC() {
         : event.altKey ?
             -1
             : 0;
-    const npcCombatants = this.combatants.filter(c => c.isOwner && c.isNPC && !c.initiative);
+    const npcCombatants = this.combatants.filter(c => c.isOwner && c.actor.type === "npc" && !c.initiative);
     for (const combatant of npcCombatants) {
         await rollDefaultAction(combatant, adv);
     }
