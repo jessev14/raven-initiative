@@ -7,3 +7,21 @@
 # Raven Initiative
 
 Commissioned by Rellek.
+
+Raven Initiative is a alternative initiative system for DnD 5e.
+
+# Rule Changes
+
+* Instead of rolling `1d20 + DEX mod` for initiative, different dice are rolled based on the action chosen at the beginning of the round.
+* Lower initiative results go first in the round, with ties won by higher DEX score.
+* The chosen action for the round can be changed mid-round, but a new inititiave die must be rolled and added to the previous initiative total.
+
+# Module Features
+
+In addition to implementing the above rule changes, this module adds features to streamline the Raven Initiative system in FoundryVTT:
+
+* NPCs have default actions (unique to each token) which can be rolled with single button click.
+* GM users have access to a Initiative Info Panel to observe all NPCs, their current action, and their default action.
+* Initiative Upgrade/Downgrade features can be customized and added to actors to impose upgraded or downgraded initiative dice.
+* Player users have new combatant context menu items to better control their characters.
+* Changing actions can also be done by clicking a combatant's initiative number in the combat tracker.
