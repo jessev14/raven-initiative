@@ -1,0 +1,70 @@
+<style>
+    input[type=radio] {
+        flex: none;
+    }
+</style>
+<form>
+    <div class="form-group">
+        <label>
+            <input type="radio" name="action" value="Fast Action">
+            Fast Action - Movement; Swap gear; Sheath weapon (1d{{dice.[0]}})
+        </label>
+    </div>
+
+    <div class="form-group">
+        <label>
+            <input type="radio" name="action" value="Standard Action">
+            Standard Action (1d{{dice.[1]}})
+        </label>
+    </div>
+
+    <div class="form-group">
+        <label>
+            <input type="radio" name="action" value="Cantrip">
+            Cantrip (1d{{dice.[2]}})
+        </label>
+    </div>
+
+    <div class="form-group">
+        <label>
+            <input type="radio" name="action" value="Spellcasting">
+            Spellcasting (1d{{dice.[3]}})
+        </label>
+    </div>
+
+    <div class="form-group">
+        <label>
+            <input type="radio" name="action" value="weapon">
+            Weapon Attack:
+        </label>
+        <select name="weapon-select" style="flex: none; width: 200px">
+            {{{weaponOptions}}}
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>
+            <input type="radio" name="action" value="weapon-alt">
+            Weapon Attack:
+        </label>
+        <input type="text" name="weapon-alt" value="" placeholder="e.g. 1d6" style="flex: none; width: 200px">
+    </div>
+
+    <div class="form-group">
+        <label>
+            <input type="radio" style="visibility: hidden">
+            Bonus/Penalty
+        </label>
+        <input type="text" name="bonus" value="" placeholder="e.g. +1d4 or +3 or -2" style="flex: none; width: 200px">
+    </div>
+
+    <div class="form-group">
+        <label>
+            <input type="radio" style="visibility: hidden">
+            Roll Mode
+        </label>
+        <select name="rollMode" style="flex: none; width: 200px">
+            {{selectOptions rollModes selected=defaultRollMode localize=true}}
+        </select>
+    </div>
+</form>

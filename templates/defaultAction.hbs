@@ -1,0 +1,22 @@
+<div class="form-group">
+    <label>Default Initiative Action</label>
+    <select name="flags.raven-initiative.defaultAction">
+        <option value="Fast Action" {{#if (eq defaultAction "Fast Action")}}selected{{/if}}>
+            Fast Action (1d4)
+        </option>
+        <option value="Standard Action" {{#if (eq defaultAction "Standard Action")}}selected{{/if}}>
+            Standard Action (1d6)
+        </option>
+        <option value="Cantrip" {{#if (eq defaultAction "Cantrip")}}selected{{/if}}>
+            Cantrip (1d8)
+        </option>
+        <option value="Spellcasting" {{#if (eq defaultAction "Spellcasting")}}selected{{/if}}>
+            Spellcasting (1d10)
+        </option>
+        {{#each weapons}}
+        <option value="{{this.id}}" data-weaponName="{{this.name}} (1d{{this.d}})" {{#if (eq ../defaultAction this.id)}}selected{{/if}}>
+            {{this.name}} (1d{{this.d}})
+        </option>
+        {{/each}}
+    </select>
+</div>
