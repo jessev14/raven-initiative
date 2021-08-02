@@ -26,11 +26,15 @@ const downgrade = {
 const dice_downgrade = [6, 8, 10, 12, 14];
 
 export function getGrade(actor) {
-    const gradeEffect = actor.effects.find(e => e.data.changes[0]?.key === "raven-initiative-grade");
-    if (!gradeEffect) return {actions, dice};
+    const gradeEffects = actor.effects.filter(e => e.data.changes[0]?.key === "raven-initiative-grade");
+    if (!gradeEffects.length) return {actions, dice};
 
-    if (gradeEffect.data.changes[0].value === 1) return {actions: upgrade, dice: dice_upgrade};
-    else return {actions: downgrade, dice: dice_downgrade};
+    const upgrades = gradeEffects.filter(e => e.data.changes[0].value === "1");
+    const downgrades = gradeEffects.filter(e => e.data.changes[0].value === "-1");
+    
+    if (upgrades.length > downgrades.length) return { actions: upgrade, dice: dice_upgrade };
+    else if (upgrades.length < downgrades.length) return {actions: downgrade, dice: dice_downgrade};
+    else return {actions, dice};
 }
 
 export function getWeaponDie(item, inputDice) {
