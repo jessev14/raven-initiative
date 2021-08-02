@@ -9,6 +9,7 @@
 Commissioned by Rellek.
 
 Raven Initiative is a alternative initiative system for DnD 5e.
+Rules Doc: https://docs.google.com/document/d/1HzB2HhfarNag6lS1FqOhdPJu18F3Ofz0sUGEKnYHbOE/edit#heading=h.t80xhxj4b5rs
 
 ## Rule Changes
 
