@@ -41,9 +41,11 @@ export function getWeaponDie(item, inputDice) {
     const damagePart = item.data.data.damage.parts?.[0]?.[0];
     if (!damagePart) return null;
 
-    for (let i = 0; i < dice.length; i++) {
-        if (damagePart.includes(dice[i])) {
-            return inputDice[i];
+    for (const part of damagePart.split("+")) {
+        for (let i = 0; i < dice.length; i++) {
+            if (part.trim().includes(`d${dice[i]}`)) {
+                return `${part.split("d")[0]}d${inputDice[i]}`;
+            }
         }
     }
 

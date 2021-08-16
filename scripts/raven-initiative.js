@@ -1,4 +1,4 @@
-import { libWrapper} from "../lib/shim.js";
+import { libWrapper } from "../lib/shim.js";
 import { RavenInfoPanel } from "./RavenInfoPanel.js";
 import { moduleName, getWeaponDie, getGrade, processAdvantange } from "./helpers.js";
 
@@ -36,6 +36,15 @@ Hooks.once("init", () => {
             all: "Player Characters and NPCs"
         },
         default: "disabled"
+    });
+
+    game.settings.register(moduleName, "batchMode", {
+        name: "Weapon Attack Batch Mode",
+        hint: "If enabled, weapon attack initiative rolls with advantage or disadvantage will be rolled in batches.",
+        scope: "world",
+        config: true,
+        type: Boolean,
+        default: false
     });
 });
 
@@ -206,7 +215,6 @@ function reverseInit(a, b) {
     // If DEX score still tied (cd = 0), compare init upgrade/downgrade
     const ga = a.actor.effects.find(e => e.data.changes[0]?.key === "raven-initiative-grade")?.data.changes[0]?.value || 0;
     const gb = b.actor.effects.find(e => e.data.changes[0]?.key === "raven-initiative-grade")?.data.changes[0]?.value || 0;
-    console.log({ga, gb})
 
     if (ga > gb) return -1;
     if (ga < gb) return 1;
@@ -231,7 +239,7 @@ async function ravenInitiative(combatantIDs) {
         let weaponOptions = ``;
         for (const weapon of weapons) {
             const weaponDie = getWeaponDie(weapon, dice);
-            if (weaponDie) weaponOptions += `<option value="${weapon.id}">${weapon.name} (1d${weaponDie})</option>`;
+            if (weaponDie) weaponOptions += `<option value="${weapon.id}">${weapon.name} (${weaponDie})</option>`;
         }
 
         const rollModes = CONFIG.Dice.rollModes;
@@ -272,7 +280,22 @@ async function ravenInitiative(combatantIDs) {
 
             let formula = ``;
 
-            if (selectedAction === "weapon") formula = `${n}d${getWeaponDie(weapon, dice)}${k}`;
+            if (selectedAction === "weapon") {
+                if (game.settings.get(moduleName, "batchMode")) {
+                    const weaponDie = getWeaponDie(weapon, dice);
+                    const num = parseInt(weaponDie.split("d")[0]);
+                    const die = parseInt(weaponDie.split("d")[1]);
+                    formula += `{`;
+                    for (let i = 0; i < num; i++) {
+                        formula += `2d${die}${k}, `
+                    }
+                    formula += `}`;
+                } else {
+                    formula = getWeaponDie(weapon, dice);
+                    if (adv === -1) formula = `{${formula}, ${formula}}kl`;
+                    else if (adv === 1) formula = `{${formula}, ${formula}}kh`;
+                }
+            }
             else if (selectedAction === "weapon-alt") formula = html.find('input[name="weapon-alt"]').val();
             else formula = `${n}d${actions[selectedAction]}${k}`;
 
@@ -311,9 +334,7 @@ async function ravenInitiative(combatantIDs) {
             // If combatant is an NPC, update current action flag
             if (combatant.actor.type === "npc") {
                 let currentAction = selectedAction;
-                //if (selectedAction === "weapon") currentAction = `${weapon.name} (1d${getWeaponDie(weapon, dice)})`;
                 if (selectedAction === "weapon") currentAction = weapon.id;
-                //else if (selectedAction === "weaponAlt") currentAction = `Weapon Attack (${formula})`;
                 else if (selectedAction === "weapon-alt") currentAction = formula;
                 await combatant.setFlag(moduleName, "currentAction", currentAction);
             }
@@ -355,7 +376,6 @@ async function rollDefaultAction(combatant, adv) {
     const { actions, dice } = getGrade(combatant.actor);
 
     const defaultAction = combatant.token.getFlag(moduleName, "defaultAction") ?? "Standard Action";
-    console.log(defaultAction)
     const weapon = combatant.actor.items.get(defaultAction);
 
     let flavor = `Initiative - `;
