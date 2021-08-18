@@ -206,15 +206,21 @@ function reverseInit(a, b) {
         if (cn) return cn;
     }
 
+    const aActor = a.actor || a.token.actor;
+    const bActor = b.actor || b.token.actor;
+
     // If combatants do have initiatives, but they are equal (ci = 0), then break tie with DEX score
     const ci = ia - ib;
     if (ci) return ci;
-    const cd = b.actor.data.data.abilities.dex.value - a.actor.data.data.abilities.dex.value;
+    //const cd = b.actor.data.data.abilities.dex.value - a.actor.data.data.abilities.dex.value;
+    const cd = bActor.data.data.abilities.dex.value - aActor.data.data.abilities.dex.value;
     if (cd) return cd;
 
     // If DEX score still tied (cd = 0), compare init upgrade/downgrade
-    const ga = a.actor.effects.find(e => e.data.changes[0]?.key === "raven-initiative-grade")?.data.changes[0]?.value || 0;
-    const gb = b.actor.effects.find(e => e.data.changes[0]?.key === "raven-initiative-grade")?.data.changes[0]?.value || 0;
+    //const ga = a.actor.effects.find(e => e.data.changes[0]?.key === "raven-initiative-grade")?.data.changes[0]?.value || 0;
+    const ga = aActor.effects.find(e => e.data.changes[0]?.key === "raven-initiative-grade")?.data.changes[0]?.value || 0;
+    //const gb = b.actor.effects.find(e => e.data.changes[0]?.key === "raven-initiative-grade")?.data.changes[0]?.value || 0;
+    const gb = bActor.effects.find(e => e.data.changes[0]?.key === "raven-initiative-grade")?.data.changes[0]?.value || 0;
 
     if (ga > gb) return -1;
     if (ga < gb) return 1;
