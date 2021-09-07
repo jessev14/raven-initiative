@@ -391,7 +391,23 @@ async function rollDefaultAction(combatant, adv) {
 
     let formula = ``;
     if (Object.keys(actions).includes(defaultAction)) formula = `${n}d${actions[defaultAction]}${k}`;
-    else if (weapon) formula = `${n}d${getWeaponDie(weapon, dice)}${k}`;
+    //else if (weapon) formula = `${n}d${getWeaponDie(weapon, dice)}${k}`;
+    else if (weapon) {
+        if (game.settings.get(moduleName, "batchMode")) {
+            const weaponDie = getWeaponDie(weapon, dice);
+            const num = parseInt(weaponDie.split("d")[0]);
+            const die = parseInt(weaponDie.split("d")[1]);
+            formula += `{`;
+            for (let i = 0; i < num; i++) {
+                formula += `2d${die}${k}, `
+            }
+            formula += `}`;
+        } else {
+            formula = getWeaponDie(weapon, dice);
+            if (adv === -1) formula = `{${formula}, ${formula}}kl`;
+            else if (adv === 1) formula = `{${formula}, ${formula}}kh`;
+        }
+    }
 
     if (!formula) return;
 

@@ -15,7 +15,7 @@
         </option>
         {{#each weapons}}
         <option value="{{this.id}}" data-weaponName="{{this.name}} (1d{{this.d}})" {{#if (eq ../defaultAction this.id)}}selected{{/if}}>
-            {{this.name}} (1d{{this.d}})
+            {{this.name}} ({{this.d}})
         </option>
         {{/each}}
     </select>
