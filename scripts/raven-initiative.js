@@ -273,6 +273,16 @@ async function ravenInitiative(combatantIDs) {
                     callback: html => processActions(html, 1)
                 }
             },
+            render: html => {
+                if (combatant.actor.type !== "character") return;
+
+                const prevAction = combatant.getFlag(moduleName, "prevAction") || "Standard Action";
+                
+                html.find(`option[value="${prevAction}"]`).prop("selected", true);
+                html.find(`input[value="weapon"]`).prop("checked", true);
+
+                html.find(`input[value="${prevAction}"]`).prop("checked", true);
+            },
             default: "normal"
         }).render(true);
 
@@ -338,12 +348,12 @@ async function ravenInitiative(combatantIDs) {
             await combatant.update({ initiative });
 
             // If combatant is an NPC, update current action flag
-            if (combatant.actor.type === "npc") {
-                let currentAction = selectedAction;
-                if (selectedAction === "weapon") currentAction = weapon.id;
-                else if (selectedAction === "weapon-alt") currentAction = formula;
-                await combatant.setFlag(moduleName, "currentAction", currentAction);
-            }
+            let currentAction = selectedAction;
+            if (selectedAction === "weapon") currentAction = weapon.id;
+            else if (selectedAction === "weapon-alt") currentAction = formula;
+
+            if (combatant.actor.type === "npc") await combatant.setFlag(moduleName, "currentAction", currentAction);
+            else await combatant.setFlag(moduleName, "prevAction", currentAction);
         }
     }
 }
