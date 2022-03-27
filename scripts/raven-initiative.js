@@ -276,10 +276,14 @@ async function ravenInitiative(combatantIDs) {
             render: html => {
                 if (combatant.actor.type !== "character") return;
 
-                const prevAction = combatant.getFlag(moduleName, "prevAction") || "Standard Action";
-                
-                html.find(`option[value="${prevAction}"]`).prop("selected", true);
-                html.find(`input[value="weapon"]`).prop("checked", true);
+                const prevAction = combatant.actor.getFlag(moduleName, "prevAction");
+
+                html.find(`input[value="Standard Action"]`).prop("checked", true);
+
+                if (html.find(`option[value="${prevAction}"]`).length) {
+                    html.find(`option[value="${prevAction}"]`).prop("selected", true);
+                    html.find(`input[value="weapon"]`).prop("checked", true);
+                }
 
                 html.find(`input[value="${prevAction}"]`).prop("checked", true);
             },
@@ -353,7 +357,7 @@ async function ravenInitiative(combatantIDs) {
             else if (selectedAction === "weapon-alt") currentAction = formula;
 
             if (combatant.actor.type === "npc") await combatant.setFlag(moduleName, "currentAction", currentAction);
-            else await combatant.setFlag(moduleName, "prevAction", currentAction);
+            else await combatant.actor.setFlag(moduleName, "prevAction", currentAction);
         }
     }
 }
