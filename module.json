@@ -1,12 +1,24 @@
 {
-    "name": "raven-initiative",
+    "id": "raven-initiative",
     "title": "Raven Initiative",
     "description": "",
     "author": "enso#0361",
     "version": "1.0.0",
-    "minimumCoreVersion": "0.8.1",
-    "compatibleCoreVersion": "0.8.8",
-    "system": ["dnd5e"],
+    "compatibility": {
+        "minimum": "10",
+        "verified": "10"
+    },
+    "relationships": {
+        "systems": [
+            {
+                "id": "dnd5e",
+                "type": "system",
+                "compatibility": {
+                    "minimum": "2.0.0"
+                }
+            }
+        ]
+    },
     "esmodules": [
         "scripts/raven-initiative.js"
     ],

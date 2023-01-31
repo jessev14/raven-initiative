@@ -46,14 +46,13 @@ Hooks.once("init", () => {
         type: Boolean,
         default: false
     });
-});
 
-Hooks.once("setup", () => {
     // Reverse initiative sorting, with ties won by higher DEX score
     libWrapper.register(moduleName, "Combat.prototype._sortCombatants", reverseInit, "OVERRIDE");
 
     // Replace roll initiative button with opening Select Actions dialog
-    libWrapper.register(moduleName, "Combat.prototype.rollInitiative", ravenInitiative, "OVERRIDE");
+    // libWrapper.register(moduleName, "Combat.prototype.rollInitiative", ravenInitiative, "OVERRIDE");
+    libWrapper.register(moduleName, "CONFIG.Actor.documentClass.prototype.rollInitiativeDialog", ravenInitiative, "OVERRIDE");
 
     // Replace RollAll with rolling Default Initiative Action for NPCs
     libWrapper.register(moduleName, "Combat.prototype.rollAll", ravenRollNPC, "OVERRIDE");
@@ -65,7 +64,7 @@ Hooks.once("setup", () => {
     libWrapper.register(moduleName, "Combat.prototype.resetAll", ravenReset, "WRAPPER");
 
     // Replace dnd5e actor sheet initiative roll with opening Select Actions dialog
-    libWrapper.register(moduleName, "CONFIG.Actor.documentClass.prototype.rollInitiative", ravenInitiativeActor, "WRAPPER");
+    // libWrapper.register(moduleName, "CONFIG.Actor.documentClass.prototype.rollInitiativeDialog", ravenInitiativeActor, "WRAPPER");
 });
 
 
@@ -115,7 +114,7 @@ Hooks.on("getCombatTrackerEntryContext", (html, options) => {
     options.splice(-2, 0, rollDefault);
 });
 
-Hooks.on("updateCombat", (combat, diff, options, userID) => {
+Hooks.on("preUpdateCombat", (combat, diff, options, userID) => {
     // When a new round starts, reset initiative and flags
     if (diff.round > 1) combat.resetAll();
 });
@@ -153,7 +152,7 @@ Hooks.on("renderCombatTracker", (app, html, appData) => {
         // Clicking initiative number also opens Select Action dialog
         $(this).find("div.token-initiative").click(event => {
             event.stopPropagation();
-            app.viewed.rollInitiative([combatant.id]);
+            if (combatant.initiative) combatant.actor.rollInitiativeDialog();
         });
     });
 
@@ -182,7 +181,7 @@ Hooks.on("renderTokenConfig", async (app, html, appData) => {
     const weapons = app.token.actor.items.contents.filter(i => {
         if (i.data.type !== "weapon") return false;
 
-        if (equipSetting) return i.data.data.equipped;
+        if (equipSetting) return i.system.equipped;
         return true;
     });
     const { dice } = getGrade(app.actor);
@@ -212,8 +211,7 @@ function reverseInit(a, b) {
     // If combatants do have initiatives, but they are equal (ci = 0), then break tie with DEX score
     const ci = ia - ib;
     if (ci) return ci;
-    //const cd = b.actor.data.data.abilities.dex.value - a.actor.data.data.abilities.dex.value;
-    const cd = bActor.data.data.abilities.dex.value - aActor.data.data.abilities.dex.value;
+    const cd = bActor.system.abilities.dex.value - aActor.system.abilities.dex.value;
     if (cd) return cd;
 
     // If DEX score still tied (cd = 0), compare init upgrade/downgrade
@@ -230,16 +228,16 @@ function reverseInit(a, b) {
 }
 
 // Initiative Dice
-async function ravenInitiative(combatantIDs) {
-    for (const ID of combatantIDs) {
+async function ravenInitiative() {
+    for (const ID of this.getActiveTokens().filter(t => t.combatant).map(t => t.combatant.id)) {
         const combatant = game.combats.viewed.combatants.get(ID);
         const { actions, dice } = getGrade(combatant.actor);
 
         const equipSetting = game.settings.get(moduleName, "equippedOnly");
         const weapons = combatant.actor.items.filter(i => {
-            if (i.data.type !== "weapon") return false;
+            if (i.type !== "weapon") return false;
 
-            if (equipSetting) return i.data.data.equipped;
+            if (equipSetting) return i.system.equipped;
             return true;
         });
         let weaponOptions = ``;
@@ -337,7 +335,7 @@ async function ravenInitiative(combatantIDs) {
             const initRoll = await new Roll(formula).roll();
             let initiative = initRoll.total;
             const messageData = {
-                speaker: ChatMessage.getSpeaker({ token: combatant.token.object })
+                speaker: ChatMessage.getSpeaker({ token: combatant.token.document })
             };
             const flavorSetting = game.settings.get(moduleName, "actionFlavor");
             if (
@@ -362,9 +360,9 @@ async function ravenInitiative(combatantIDs) {
     }
 }
 
-function ravenInitiativeActor(wrapped, { createCombatants, rerollInitiative, initiativeOptions }) {
+function ravenInitiativeActor(wrapped, options={}) {
     // Whenever actor roll initiative is called, always "reroll" initiative ("Change Action")
-    return wrapped({ createCombatants, rerollInitiative: true, initiativeOptions });
+    return wrapped(options);
 }
 
 async function ravenRollNPC() {
