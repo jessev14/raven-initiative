@@ -133,7 +133,7 @@ Hooks.on("renderCombatTracker", (app, html, appData) => {
             || combatant.isOwner
         ) {
             $(this).find("div.combatant-controls").prepend(`
-                <a class="combatant-control ${active}" title="Delay" name="raven-initiative-delay">
+                <a class="combatant-control ${active}" data-tooltip="Delay" name="raven-initiative-delay">
                     <i class="fas fa-history"></i></a>
             `);
 
@@ -335,7 +335,7 @@ async function ravenInitiative() {
             const initRoll = await new Roll(formula).roll();
             let initiative = initRoll.total;
             const messageData = {
-                speaker: ChatMessage.getSpeaker({ token: combatant.token.document })
+                speaker: ChatMessage.getSpeaker({ token: combatant.token })
             };
             const flavorSetting = game.settings.get(moduleName, "actionFlavor");
             if (
@@ -379,7 +379,7 @@ async function ravenRollNPC() {
 
 async function ravenReset(wrapper) {
     for (const c of this.combatants) {
-        c.data.update({ "flags.raven-initiative.currentAction": null, "flags.raven-initiative.delay": false });
+        c.update({ "flags.raven-initiative.currentAction": null, "flags.raven-initiative.delay": false });
     }
 
     wrapper();
@@ -426,7 +426,7 @@ async function rollDefaultAction(combatant, adv) {
     const initRoll = await new Roll(formula).roll();
     const initiative = initRoll.total;
     const messageData = {
-        speaker: ChatMessage.getSpeaker({ token: combatant.token.object })
+        speaker: ChatMessage.getSpeaker({ token: combatant.token })
     };
     if (game.settings.get(moduleName, "actionFlavor") === "all") messageData.flavor = flavor;
     await initRoll.toMessage(messageData, { rollMode: game.settings.get("core", "rollMode") });
