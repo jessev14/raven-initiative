@@ -2,6 +2,8 @@ import { libWrapper } from "../lib/shim.js";
 import { RavenInfoPanel } from "./RavenInfoPanel.js";
 import { moduleName, getWeaponDie, getGrade, processAdvantange } from "./helpers.js";
 
+const moduleID = 'raven-initiative';
+
 Hooks.once("init", () => {
     console.log("raven-initiative | initializing");
 
@@ -114,9 +116,15 @@ Hooks.on("getCombatTrackerEntryContext", (html, options) => {
     options.splice(-2, 0, rollDefault);
 });
 
-Hooks.on("preUpdateCombat", (combat, diff, options, userID) => {
+Hooks.on('updateCombat', (combat, diff, options, userID) => {
     // When a new round starts, reset initiative and flags
-    if (diff.round > 1) combat.resetAll();
+    if (diff.round > 1 && game.user.isGM) combat.resetAll();
+
+    if (diff.turn === 0 && diff.round === 1) {
+        const apps = Object.values(ui.windows);
+        const isOpen = apps.some(a => a.id === 'combat-popout');
+        if (!isOpen) ui.combat.renderPopout();
+    }
 });
 
 Hooks.on("renderCombatTracker", (app, html, appData) => {
@@ -140,6 +148,33 @@ Hooks.on("renderCombatTracker", (app, html, appData) => {
             if (!combatant.isOwner) {
                 $(this).find(`a[name="raven-initiative-delay"]`).css("pointer-events", "none");
             }
+        }
+        
+        // Add action label.
+        const action = combatant.getFlag(moduleID, 'currentAction');
+        const item = combatant.actor.items.get(action);
+        let actionLabel;
+        if (combatant.actor.type === 'character') {
+            if (item) actionLabel = item.name;
+        } else {
+            if (item) actionLabel = 'Unknown Action';
+        }
+        if (action && !item) actionLabel = action;
+        
+        if (actionLabel) {
+            const actionHeader = document.createElement('h4');
+            actionHeader.style.color = 'lightblue';
+            actionHeader.innerText = actionLabel;
+            const name = $(this).find('div.token-name h4')[0];
+            name.after(actionHeader);
+        }
+
+        // Add delay label.
+        if (combatant.getFlag(moduleID, 'delay')) {
+            const delayHeader = document.createElement('h4');
+            delayHeader.style.color = 'orange';
+            delayHeader.innerText = 'Delaying';
+            $(this).find('div.combatant-controls').before(delayHeader);
         }
 
         if (!combatant.isOwner) return;
@@ -166,8 +201,18 @@ Hooks.on("renderCombatTracker", (app, html, appData) => {
             return combatant.isOwner && Number.isNumeric(combatant.initiative);
         };
         reroll.icon = '<i class="fas fa-exchange-alt"></i>';
-
         new ContextMenu(html, ".directory-item", [reroll]);
+
+        // Add Change Action, Delay, and Resume buttons.
+        const changeActionNav = document.createElement('nav');
+        changeActionNav.classList.add('directory-footer');
+        const changeAction = document.createElement('a');
+        changeAction.classList.add('combat-control');
+        changeAction.addEventListener('click', () => combatant.actor.rollInitiativeDialog());
+        changeActionNav.appendChild(changeAction);
+
+        html.find('nav#combat-controls')[0].before(changeActionNav);
+
     }
 
     ui.raven?.render();
@@ -354,8 +399,8 @@ async function ravenInitiative() {
             if (selectedAction === "weapon") currentAction = weapon.id;
             else if (selectedAction === "weapon-alt") currentAction = formula;
 
-            if (combatant.actor.type === "npc") await combatant.setFlag(moduleName, "currentAction", currentAction);
-            else await combatant.actor.setFlag(moduleName, "prevAction", currentAction);
+            await combatant.setFlag(moduleName, "currentAction", currentAction);
+            if (combatant.actor.type === 'character') await combatant.actor.setFlag(moduleName, "prevAction", currentAction);
         }
     }
 }
@@ -375,13 +420,15 @@ async function ravenRollNPC() {
     for (const combatant of npcCombatants) {
         await rollDefaultAction(combatant, adv);
     }
+
+    await this.update({turn: 0});
 }
 
 async function ravenReset(wrapper) {
     for (const c of this.combatants) {
-        c.update({ "flags.raven-initiative.currentAction": null, "flags.raven-initiative.delay": false });
+        await c.update({ 'flags.raven-initiative.currentAction': null, 'flags.raven-initiative.delay': false });
     }
-
+    
     wrapper();
 }
 
