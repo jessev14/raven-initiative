@@ -67,6 +67,17 @@ Hooks.once("init", () => {
 
     // Replace dnd5e actor sheet initiative roll with opening Select Actions dialog
     // libWrapper.register(moduleName, "CONFIG.Actor.documentClass.prototype.rollInitiativeDialog", ravenInitiativeActor, "WRAPPER");
+
+    game.socket.on(`module.${moduleID}`, data => {
+        const { action } = data;
+
+        if (action === 'updateTurn') {
+            if (game.user.id !== game.users.find(u => u.active && u.isGM).id) return;
+
+            const { turn } = data;
+            return game.combat.update({ turn });
+        }
+    });
 });
 
 
@@ -78,7 +89,11 @@ Hooks.on("getCombatTrackerEntryContext", (html, options) => {
     reroll.condition = li => {
         const combatant = game.combats.viewed.combatants.get(li.data("combatant-id"));
         return Number.isNumeric(combatant.initiative)
-    }
+    };
+    reroll.callback = li => {
+        const combatant = game.combats.viewed.combatants.get(li.data("combatant-id"));
+        return combatant.actor.rollInitiativeDialog();
+    };
 
     // For NPCs Add option to roll default action
     const rollDefault = {
@@ -149,7 +164,7 @@ Hooks.on("renderCombatTracker", (app, html, appData) => {
                 $(this).find(`a[name="raven-initiative-delay"]`).css("pointer-events", "none");
             }
         }
-        
+
         // Add action label.
         const action = combatant.getFlag(moduleID, 'currentAction');
         const item = combatant.actor.items.get(action);
@@ -160,7 +175,7 @@ Hooks.on("renderCombatTracker", (app, html, appData) => {
             if (item) actionLabel = 'Unknown Action';
         }
         if (action && !item) actionLabel = action;
-        
+
         if (actionLabel) {
             const actionHeader = document.createElement('h4');
             actionHeader.style.color = 'lightblue';
@@ -172,7 +187,7 @@ Hooks.on("renderCombatTracker", (app, html, appData) => {
         // Add delay label.
         if (combatant.getFlag(moduleID, 'delay')) {
             const delayHeader = document.createElement('h4');
-            delayHeader.style.color = 'orange';
+            delayHeader.style.color = 'yellow';
             delayHeader.innerText = 'Delaying';
             $(this).find('div.combatant-controls').before(delayHeader);
         }
@@ -191,28 +206,48 @@ Hooks.on("renderCombatTracker", (app, html, appData) => {
         });
     });
 
+    // Add Change Action, Delay, and Resume buttons.
     if (!game.user.isGM) {
-        // Add Change Action context menu options for players
-        const entryOptions = app._getEntryContextOptions();
-        const reroll = entryOptions.find(o => o.name === "COMBAT.CombatantReroll");
-        reroll.name = "Change Action";
-        reroll.condition = li => {
-            const combatant = app.viewed.combatantas.get(li.data("combatant-id"));
-            return combatant.isOwner && Number.isNumeric(combatant.initiative);
-        };
-        reroll.icon = '<i class="fas fa-exchange-alt"></i>';
-        new ContextMenu(html, ".directory-item", [reroll]);
-
-        // Add Change Action, Delay, and Resume buttons.
-        const changeActionNav = document.createElement('nav');
-        changeActionNav.classList.add('directory-footer');
-        const changeAction = document.createElement('a');
-        changeAction.classList.add('combat-control');
-        changeAction.addEventListener('click', () => combatant.actor.rollInitiativeDialog());
+        const combatant = game.combat?.combatant;
+        if (combatant?.isOwner) {
+            const changeActionNav = document.createElement('nav');
+            changeActionNav.classList.add('directory-footer', moduleID);
+            const changeAction = document.createElement('a');
+            changeAction.classList.add('combat-control', 'change-action');
+            changeAction.innerText = 'Change Action';
+            changeAction.addEventListener('click', () => combatant.actor.rollInitiativeDialog());
+            changeActionNav.appendChild(changeAction);
         changeActionNav.appendChild(changeAction);
+            changeActionNav.appendChild(changeAction);
+        changeActionNav.appendChild(changeAction);
+            changeActionNav.appendChild(changeAction);
+            html.find('nav#combat-controls').before(changeActionNav);
 
-        html.find('nav#combat-controls')[0].before(changeActionNav);
+            if (!combatant.getFlag(moduleID, 'delay')) {
+                const delayNav = document.createElement('nav');
+                delayNav.classList.add('directory-footer', moduleID);
+                const delayButton = document.createElement('a');
+                delayButton.classList.add('combat-control', 'change-action');
+                delayButton.innerText = 'Delay Action';
+                // delayButton.addEventListener('click', () => combatant.update({ 'flags.raven-initiative.delay': true }));
+                delayButton.addEventListener('click', () => combatant.setFlag(moduleID, 'delay', true));
+                delayNav.appendChild(delayButton);
+                html.find('nav#combat-controls').before(delayNav);
+            }
+        }
 
+        const { character } = game.user;
+        const characterCombatant = character.getActiveTokens()[0]?.combatant;
+        if (characterCombatant?.getFlag(moduleID, 'delay')) {
+            const resumeNav = document.createElement('nav');
+            resumeNav.classList.add('directory-footer', moduleID);
+            const resumeButton = document.createElement('a');
+            resumeButton.classList.add('combat-control', 'change-action');
+            resumeButton.innerText = 'Resume Action';
+            resumeButton.addEventListener('click', () => ravenResume(characterCombatant));
+            resumeNav.appendChild(resumeButton);
+            html.find('nav#combat-controls').before(resumeNav);
+        }
     }
 
     ui.raven?.render();
@@ -428,7 +463,7 @@ async function ravenReset(wrapper) {
     for (const c of this.combatants) {
         await c.update({ 'flags.raven-initiative.currentAction': null, 'flags.raven-initiative.delay': false });
     }
-    
+
     wrapper();
 }
 
@@ -479,4 +514,19 @@ async function rollDefaultAction(combatant, adv) {
     await initRoll.toMessage(messageData, { rollMode: game.settings.get("core", "rollMode") });
     await combatant.update({ initiative });
     await combatant.setFlag(moduleName, "currentAction", defaultAction);
+}
+
+async function ravenResume(combatant) {
+    await combatant.setFlag(moduleID, 'delay', false);
+
+    const currentCombatant = game.combat.combatant;
+    if (combatant === currentCombatant) return;
+
+    await combatant.update({initiative: currentCombatant.initiative});
+
+    const combatantTurn = game.combat.turns.indexOf(combatant);
+    const currentTurn = game.combat.turns.indexOf(currentCombatant);
+    if (combatantTurn < currentTurn) {
+        return game.socket.emit(`module.${moduleID}`, { action: 'updateTurn', turn: combatantTurn });
+    }
 }

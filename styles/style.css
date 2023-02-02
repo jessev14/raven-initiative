@@ -1,0 +1,12 @@
+nav.raven-initiative {
+    display: flex;
+    justify-content: center;
+}
+
+nav.raven-initiative a {
+    flex: 3;
+
+    font-size: var(--font-size-20);
+    text-align: center;
+    line-height: var(--sidebar-header-height);
+}
