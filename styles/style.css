@@ -10,3 +10,57 @@ nav.raven-initiative a {
     text-align: center;
     line-height: var(--sidebar-header-height);
 }
+
+div.raven-info-panel {
+    
+}
+
+div.raven-info-panel div.combatant {
+    display: flex;
+    align-items: center;
+}
+
+div.raven-info-panel div.combatant div {
+    flex: 0;
+    margin: 0px 10px;
+}
+
+div.raven-info-panel div.combatant.header .name {
+    justify-content: center;
+}
+
+
+div.raven-info-panel div.combatant .name {
+    min-width: 170px;
+    height: fit-content;
+
+    display: flex;
+    align-items: center;
+}
+
+div.raven-info-panel div.combatant .name img.icon {
+    width: 50px;
+    border: none;
+    margin-right: 10px;
+}
+
+div.raven-info-panel div.combatant .AC {
+    min-width: 25px;
+}
+
+div.raven-info-panel div.combatant .HP {
+    min-width: 50px;
+}
+
+div.raven-info-panel div.combatant .walking-speed {
+    min-width: 50px;
+}
+
+div.raven-info-panel div.combatant .default-action {
+    min-width: 70px;
+}
+
+
+div.raven-info-panel div.combatant.header {
+    color: yellow;
+}

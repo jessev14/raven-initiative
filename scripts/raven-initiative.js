@@ -143,8 +143,10 @@ Hooks.on('updateCombat', (combat, diff, options, userID) => {
 });
 
 Hooks.on("renderCombatTracker", (app, html, appData) => {
-    html.find('a[data-control="rollAll"]').prop("title", "Roll Default Action for NPCs");
-    html.find('a[data-control="rollNPC"]').prop("title", "Initiative Info Panel");
+    if (game.user.isGM) {
+        html.find('a[data-control="rollAll"]')[0].dataset.tooltip = 'Roll Default Action for NPCs';
+        html.find('a[data-control="rollNPC"]')[0].dataset.tooltip = 'Combat Summary';
+    }
 
     html.find("li.combatant").each(function () {
         // Add Delay control button
@@ -156,7 +158,7 @@ Hooks.on("renderCombatTracker", (app, html, appData) => {
             || combatant.isOwner
         ) {
             $(this).find("div.combatant-controls").prepend(`
-                <a class="combatant-control ${active}" data-tooltip="Delay" name="raven-initiative-delay">
+                <a class="combatant-control ${active}" data-tooltip="Delay Action" name="raven-initiative-delay">
                     <i class="fas fa-history"></i></a>
             `);
 
@@ -172,7 +174,7 @@ Hooks.on("renderCombatTracker", (app, html, appData) => {
         if (combatant.actor.type === 'character') {
             if (item) actionLabel = item.name;
         } else {
-            if (item) actionLabel = 'Unknown Action';
+            if (item) actionLabel = game.user.isGM ? item.name : 'Unknown Action';
         }
         if (action && !item) actionLabel = action;
 
@@ -217,9 +219,9 @@ Hooks.on("renderCombatTracker", (app, html, appData) => {
             changeAction.innerText = 'Change Action';
             changeAction.addEventListener('click', () => combatant.actor.rollInitiativeDialog());
             changeActionNav.appendChild(changeAction);
-        changeActionNav.appendChild(changeAction);
             changeActionNav.appendChild(changeAction);
-        changeActionNav.appendChild(changeAction);
+            changeActionNav.appendChild(changeAction);
+            changeActionNav.appendChild(changeAction);
             changeActionNav.appendChild(changeAction);
             html.find('nav#combat-controls').before(changeActionNav);
 
@@ -229,8 +231,10 @@ Hooks.on("renderCombatTracker", (app, html, appData) => {
                 const delayButton = document.createElement('a');
                 delayButton.classList.add('combat-control', 'change-action');
                 delayButton.innerText = 'Delay Action';
-                // delayButton.addEventListener('click', () => combatant.update({ 'flags.raven-initiative.delay': true }));
-                delayButton.addEventListener('click', () => combatant.setFlag(moduleID, 'delay', true));
+                delayButton.addEventListener('click', async () => {
+                    await combatant.setFlag(moduleID, 'delay', true);
+                    return game.combat.nextTurn();
+                });
                 delayNav.appendChild(delayButton);
                 html.find('nav#combat-controls').before(delayNav);
             }
@@ -254,12 +258,12 @@ Hooks.on("renderCombatTracker", (app, html, appData) => {
 });
 
 Hooks.on("renderTokenConfig", async (app, html, appData) => {
-    if (app.actor.data.type !== "npc") return;
+    if (app.actor.type !== "npc") return;
 
     // Inject Default Initiative Action for NPCs
     const equipSetting = game.settings.get(moduleName, "equippedOnly");
     const weapons = app.token.actor.items.contents.filter(i => {
-        if (i.data.type !== "weapon") return false;
+        if (i.type !== "weapon") return false;
 
         if (equipSetting) return i.system.equipped;
         return true;
@@ -296,9 +300,9 @@ function reverseInit(a, b) {
 
     // If DEX score still tied (cd = 0), compare init upgrade/downgrade
     //const ga = a.actor.effects.find(e => e.data.changes[0]?.key === "raven-initiative-grade")?.data.changes[0]?.value || 0;
-    const ga = aActor.effects.find(e => e.data.changes[0]?.key === "raven-initiative-grade")?.data.changes[0]?.value || 0;
+    const ga = aActor.effects.find(e => e.changes[0]?.key === "raven-initiative-grade")?.changes[0]?.value || 0;
     //const gb = b.actor.effects.find(e => e.data.changes[0]?.key === "raven-initiative-grade")?.data.changes[0]?.value || 0;
-    const gb = bActor.effects.find(e => e.data.changes[0]?.key === "raven-initiative-grade")?.data.changes[0]?.value || 0;
+    const gb = bActor.effects.find(e => e.changes[0]?.key === "raven-initiative-grade")?.changes[0]?.value || 0;
 
     if (ga > gb) return -1;
     if (ga < gb) return 1;

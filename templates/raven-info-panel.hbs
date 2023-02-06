@@ -1,38 +1,19 @@
-<div style="flex: none; display: flex; align-items: center; padding-top: 10px; color: yellow">
-    <div style="margin: 0 0 0 53px;">
-        Combatant
+<div class="raven-info-panel">
+    <div class="combatant header">
+        <div class="name">Combatant</div>
+        <div class="AC">AC</div>
+        <div class="HP">HP</div>
+        <div class="walking-speed">Walking Speed</div>
+        <div class="default-action">Default Action</div>
     </div>
-    <div class="token-name flexcol" style="flex: 2; margin: 0 10px 0 20px;">
-        <h4>Current Action</h4>
-        <h4>[ Default Action ]</h4>
+
+    {{#each combatants as |combatant id|}}
+    <div class="combatant">
+        <div class="name"><img class='icon' src="{{combatant.img}}" /> {{combatant.name}}</div>
+        <div class="AC">{{combatant.ac}}</div>
+        <div class="HP">{{combatant.hp}} / {{combatant.max}}</div>
+        <div class="walking-speed">{{combatant.walk}}</div>
+        <div class="default-action">{{combatant.defaultAction}}</div>
     </div>
-    <div style="margin: 0 7px 0 0;">
-        Initiative
-    </div>
-</div>
-
-<ol class="directory-list">
-    {{#each turns}}
-    <li class="combatant actor directory-item flexrow" data-combatant-id="{{this.id}}" style="align-items: center;">
-        <img class="token-image" src="{{this.img}}" title="{{this.name}}" />
-
-        <div class="token-name">
-            <h4>{{this.name}}</h4>
-        </div>
-
-        <div class="token-name flexcol" style="flex: 2;">
-            <h4>{{this.currentAction}}</h4>
-            <h4>[ {{this.defaultAction}} ]</h4>
-        </div>
-
-        <div class="token-initiative">
-            {{#if this.hasRolled}}
-            <span class="initiative">{{this.initiative}}</span>
-            {{else if this.owner}}
-            <a class="combatant-control roll" title="{{localize 'COMBAT.InitiativeRoll'}}"
-                data-control="rollInitiative"></a>
-            {{/if}}
-        </div>
-    </li>
     {{/each}}
 </div>
