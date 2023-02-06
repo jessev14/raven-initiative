@@ -49,6 +49,15 @@ Hooks.once("init", () => {
         default: false
     });
 
+    game.settings.register(moduleName, 'dexTieBreaker', {
+        name: 'DEX Tiebreaker',
+        hint: 'If disabled, ties during Resume Action will be settled by original initiative.',
+        scope: 'world',
+        config: true,
+        type: Boolean,
+        default: true
+    });
+
     // Reverse initiative sorting, with ties won by higher DEX score
     libWrapper.register(moduleName, "Combat.prototype._sortCombatants", reverseInit, "OVERRIDE");
 
@@ -68,14 +77,30 @@ Hooks.once("init", () => {
     // Replace dnd5e actor sheet initiative roll with opening Select Actions dialog
     // libWrapper.register(moduleName, "CONFIG.Actor.documentClass.prototype.rollInitiativeDialog", ravenInitiativeActor, "WRAPPER");
 
-    game.socket.on(`module.${moduleID}`, data => {
+    game.socket.on(`module.${moduleID}`, async data => {
+        if (game.user.id !== game.users.find(u => u.active && u.isGM).id) return;
         const { action } = data;
 
         if (action === 'updateTurn') {
-            if (game.user.id !== game.users.find(u => u.active && u.isGM).id) return;
-
             const { turn } = data;
             return game.combat.update({ turn });
+        }
+
+        if (action === 'initiativeTieBreaker') {
+            const { resumerID, currentID } = data;
+            const resumer = game.combat.combatants.get(resumerID);
+            const current = game.combat.combatants.get(currentID);
+
+            if (!resumer || !current) return;
+
+            await resumer.update({ initiative: parseFloat(current.initiative + '.' + resumer.initiative.toString().padStart(2, '0')) });
+            await current.update({ initiative: parseFloat(current.initiative + '.' + current.initiative.toString().padStart(2, '0')) });
+            
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            const turn = game.combat.turns.indexOf(resumer);
+            await game.combat.update({ turn });
+            return;
         }
     });
 });
@@ -526,8 +551,15 @@ async function ravenResume(combatant) {
     const currentCombatant = game.combat.combatant;
     if (combatant === currentCombatant) return;
 
-    await combatant.update({initiative: currentCombatant.initiative});
+    if (!game.settings.get(moduleID, 'dexTieBreaker')) {
+        return game.socket.emit(`module.${moduleID}`, {
+            action: 'initiativeTieBreaker',
+            resumerID: combatant.id,
+            currentID: currentCombatant.id
+        });
+    }
 
+    await combatant.update({initiative: currentCombatant.initiative});
     const combatantTurn = game.combat.turns.indexOf(combatant);
     const currentTurn = game.combat.turns.indexOf(currentCombatant);
     if (combatantTurn < currentTurn) {
