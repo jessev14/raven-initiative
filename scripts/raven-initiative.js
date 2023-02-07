@@ -86,21 +86,9 @@ Hooks.once("init", () => {
             return game.combat.update({ turn });
         }
 
-        if (action === 'initiativeTieBreaker') {
-            const { resumerID, currentID } = data;
-            const resumer = game.combat.combatants.get(resumerID);
-            const current = game.combat.combatants.get(currentID);
-
-            if (!resumer || !current) return;
-
-            await resumer.update({ initiative: parseFloat(current.initiative + '.' + resumer.initiative.toString().padStart(2, '0')) });
-            await current.update({ initiative: parseFloat(current.initiative + '.' + current.initiative.toString().padStart(2, '0')) });
-            
-            await new Promise(resolve => setTimeout(resolve, 100));
-
-            const turn = game.combat.turns.indexOf(resumer);
-            await game.combat.update({ turn });
-            return;
+        if (action === 'setFlag') {
+            const { combatantID, flag, value } = data;
+            return game.combat.combatants.get(combatantID)?.setFlag(moduleID, flag, value);
         }
     });
 });
@@ -152,8 +140,22 @@ Hooks.on("getCombatTrackerEntryContext", (html, options) => {
             }).render(true);
         }
     }
-
     options.splice(-2, 0, rollDefault);
+
+    // Add Resume Action option for GMs.
+    const resumeAction = {
+        name: 'Resume Action',
+        icon: '<i class="fa-solid fa-play"></i>',
+        condition: li => {
+            const combatant = game.combats.viewed.combatants.get(li.data("combatant-id"));
+            return game.user.isGM && combatant.getFlag(moduleID, 'delay');
+        },
+        callback: li => {
+            const combatant = game.combats.viewed.combatants.get(li.data("combatant-id"));
+            return ravenResume(combatant);
+        }
+    };
+    options.splice(-1, 0, resumeAction);
 });
 
 Hooks.on('updateCombat', (combat, diff, options, userID) => {
@@ -320,8 +322,16 @@ function reverseInit(a, b) {
     // If combatants do have initiatives, but they are equal (ci = 0), then break tie with DEX score
     const ci = ia - ib;
     if (ci) return ci;
-    const cd = bActor.system.abilities.dex.value - aActor.system.abilities.dex.value;
-    if (cd) return cd;
+
+    if (game.settings.get(moduleID, 'dexTieBreaker')) {
+        const cd = bActor.system.abilities.dex.value - aActor.system.abilities.dex.value;
+        if (cd) return cd;
+    } else {
+        const aOgInit = a.getFlag(moduleID, 'originalInit');
+        const bOgInit = b.getFlag(moduleID, 'originalInit');
+        const cOgInit = aOgInit - bOgInit;
+        if (cOgInit) return cOgInit;
+    }
 
     // If DEX score still tied (cd = 0), compare init upgrade/downgrade
     //const ga = a.actor.effects.find(e => e.data.changes[0]?.key === "raven-initiative-grade")?.data.changes[0]?.value || 0;
@@ -551,18 +561,18 @@ async function ravenResume(combatant) {
     const currentCombatant = game.combat.combatant;
     if (combatant === currentCombatant) return;
 
-    if (!game.settings.get(moduleID, 'dexTieBreaker')) {
-        return game.socket.emit(`module.${moduleID}`, {
-            action: 'initiativeTieBreaker',
-            resumerID: combatant.id,
-            currentID: currentCombatant.id
-        });
-    }
-
+    await combatant.setFlag(moduleID, 'originalInit', combatant.initiative);
     await combatant.update({initiative: currentCombatant.initiative});
     const combatantTurn = game.combat.turns.indexOf(combatant);
     const currentTurn = game.combat.turns.indexOf(currentCombatant);
     if (combatantTurn < currentTurn) {
-        return game.socket.emit(`module.${moduleID}`, { action: 'updateTurn', turn: combatantTurn });
+        if (game.user.isGM) {
+            await currentCombatant.setFlag(moduleID, 'originalInit', currentCombatant.initiative);
+            return game.combat.update({ turn: combatantTurn });
+        } else {
+            await game.socket.emit(`module.${moduleID}`, { action: 'setFlag', combatantID: currentCombatant.id, flag: 'originalInit', value: currentCombatant.initiative });
+            return game.socket.emit(`module.${moduleID}`, { action: 'updateTurn', turn: combatantTurn });
+        }
+        
     }
 }
