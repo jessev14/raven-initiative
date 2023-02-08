@@ -279,7 +279,18 @@ Hooks.on("renderCombatTracker", (app, html, appData) => {
             resumeNav.appendChild(resumeButton);
             html.find('nav#combat-controls').before(resumeNav);
         }
+    } else {
+        // Add Start Round button.
+        const startNav = document.createElement('nav');
+        startNav.classList.add('directory-footer', moduleID);
+        const startButton = document.createElement('a');
+        startButton.classList.add('combat-control', 'change-action');
+        startButton.innerText = 'Start Round';
+        startButton.addEventListener('click', () => game.combat.update({ turn: 0 }));
+        startNav.appendChild(startButton);
+        html.find('nav#combat-controls').before(startNav);
     }
+
 
     ui.raven?.render();
 });
@@ -495,7 +506,7 @@ async function ravenRollNPC() {
         await rollDefaultAction(combatant, adv);
     }
 
-    await this.update({turn: 0});
+    // await this.update({turn: 0});
 }
 
 async function ravenReset(wrapper) {
