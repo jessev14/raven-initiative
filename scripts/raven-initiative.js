@@ -589,7 +589,7 @@ async function ravenResume(combatant) {
 }
 
 async function ravenDelay(combatant) {
-    await combatant.setFlag(moduleID, 'delay', false);
+    await combatant.setFlag(moduleID, 'delay', true);
 
     return game.combat.nextTurn();
 }
