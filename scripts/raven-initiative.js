@@ -258,10 +258,7 @@ Hooks.on("renderCombatTracker", (app, html, appData) => {
                 const delayButton = document.createElement('a');
                 delayButton.classList.add('combat-control', 'change-action');
                 delayButton.innerText = 'Delay Action';
-                delayButton.addEventListener('click', async () => {
-                    await combatant.setFlag(moduleID, 'delay', true);
-                    return game.combat.nextTurn();
-                });
+                delayButton.addEventListener('click', ravenDelay.bind(null, combatant));
                 delayNav.appendChild(delayButton);
                 html.find('nav#combat-controls').before(delayNav);
             }
@@ -290,7 +287,6 @@ Hooks.on("renderCombatTracker", (app, html, appData) => {
         startNav.appendChild(startButton);
         html.find('nav#combat-controls').before(startNav);
     }
-
 
     ui.raven?.render();
 });
@@ -476,7 +472,11 @@ async function ravenInitiative() {
             await initRoll.toMessage(messageData, { rollMode: html.find(`select[name="rollMode"]`).val() });
 
             // If combatant already has an initiative, add new total to previous initiative
-            if (Number.isNumeric(combatant.initiative)) initiative += combatant.initiative;
+            if (Number.isNumeric(combatant.initiative)) {
+                initiative += combatant.initiative;
+                const nextCombatant = game.combat.turns[game.combat.current.turn + 1];
+                if (nextCombatant.initiative < initiative) await game.combat.nextTurn();
+            }
             await combatant.update({ initiative });
 
             // If combatant is an NPC, update current action flag
@@ -586,4 +586,10 @@ async function ravenResume(combatant) {
         }
         
     }
+}
+
+async function ravenDelay(combatant) {
+    await combatant.setFlag(moduleID, 'delay', false);
+
+    return game.combat.nextTurn();
 }
