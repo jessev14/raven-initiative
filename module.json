@@ -30,7 +30,7 @@
             "name": "raven-initiative",
             "label": "Raven Initiative",
             "path": "packs/raven-initiative.db",
-            "entity": "Item",
+            "type": "Item",
             "package": "raven-initiative"
         }
     ],
